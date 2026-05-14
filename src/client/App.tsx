@@ -4,6 +4,9 @@ import IndexRoute from './routes/index'
 import DashboardRoute from './routes/dashboard'
 import GanttRoute from './routes/gantt'
 import MetricsRoute from './routes/metrics'
+import ManualEditorRoute from './routes/manual-editor'
+import ManualGanttRoute from './routes/manual-gantt'
+import ManualSharedRoute from './routes/manual-shared'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -23,6 +26,10 @@ export default function App() {
           <Route path="/dashboard" element={<DashboardRoute />} />
           <Route path="/gantt/:projectId" element={<GanttRoute />} />
           <Route path="/metrics/:projectId" element={<MetricsRoute />} />
+          <Route path="/manual/new" element={<ManualEditorRoute />} />
+          <Route path="/manual/:projectId/edit" element={<ManualEditorRoute />} />
+          <Route path="/manual/:projectId" element={<ManualGanttRoute />} />
+          <Route path="/manual/shared/:shareId" element={<ManualSharedRoute />} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>

@@ -13,6 +13,8 @@ export type GanttItem = {
   url: string
   labels: Array<{ name: string; color: string }>
   iteration: string | null
+  description?: string
+  dependencies?: string[]
 }
 
 export const PROGRESS: Record<string, number> = {
@@ -142,6 +144,44 @@ export function getUniqueIterations(items: GanttItem[]): string[] {
     }
   }
   return result
+}
+
+export const MANUAL_PROGRESS: Record<string, number> = {
+  todo: 0,
+  in_progress: 0.55,
+  done: 1,
+}
+
+export const MANUAL_STATUS_LABEL: Record<string, string> = {
+  todo: 'To do',
+  in_progress: 'In progress',
+  done: 'Done',
+}
+
+export function mapManualTaskToGantt(
+  task: { id: string; title: string; description?: string; status: string; startDate: string | null; endDate: string | null; dependencies?: string[] },
+  index: number
+): GanttItem {
+  const now = new Date()
+  const start = task.startDate ? new Date(task.startDate) : now
+  const end = task.endDate ? new Date(task.endDate) : new Date(now.getTime() + 7 * 86400000)
+
+  return {
+    id: task.id,
+    title: task.title,
+    code: 'MAN',
+    start,
+    end,
+    status: MANUAL_STATUS_LABEL[task.status] ?? task.status,
+    assignees: [],
+    progress: MANUAL_PROGRESS[task.status] ?? 0,
+    issueNumber: index + 1,
+    url: '',
+    labels: [],
+    iteration: null,
+    description: task.description,
+    dependencies: task.dependencies,
+  }
 }
 
 export function filterItems(

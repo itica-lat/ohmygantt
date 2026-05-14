@@ -1,6 +1,6 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { BarChart2 } from 'lucide-react'
+import { BarChart2, PenLine } from 'lucide-react'
 
 function GithubIcon({ size = 18 }: { size?: number }) {
   return (
@@ -12,16 +12,28 @@ function GithubIcon({ size = 18 }: { size?: number }) {
 import { motion } from 'motion/react'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
+import { createManualProject } from '@/lib/manual'
 
 export default function IndexRoute() {
   const { isAuthenticated, isLoading } = useAuth()
   const navigate = useNavigate()
+  const [creating, setCreating] = useState(false)
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
       navigate('/dashboard', { replace: true })
     }
   }, [isAuthenticated, isLoading, navigate])
+
+  async function handleManualEntry() {
+    setCreating(true)
+    try {
+      const project = await createManualProject('My Project')
+      navigate(`/manual/${project.id}/edit`)
+    } catch {
+      setCreating(false)
+    }
+  }
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-[#07172e] px-4">
@@ -44,28 +56,41 @@ export default function IndexRoute() {
         </div>
 
         <p className="max-w-sm text-[#7aa3c8] text-sm leading-relaxed">
-          Connect your GitHub Projects and generate interactive Gantt charts and progress metrics.
-          Your token never leaves the server.
+          Generate interactive Gantt charts and progress metrics from GitHub Projects or create
+          your own task list manually.
         </p>
 
-        <Button
-          asChild
-          size="lg"
-          className="gap-2.5 px-6"
-        >
-          <a href="/auth/github">
-            <GithubIcon size={18} />
-            Login with GitHub
-          </a>
-        </Button>
+        <div className="flex flex-col gap-3 w-full max-w-xs">
+          <Button asChild size="lg" className="gap-2.5 px-6 w-full">
+            <a href="/auth/github">
+              <GithubIcon size={18} />
+              Login with GitHub
+            </a>
+          </Button>
+
+          <div className="flex items-center gap-3">
+            <div className="h-px flex-1 bg-[#1e3a5f]" />
+            <span className="text-xs text-[#1e3a5f]">or</span>
+            <div className="h-px flex-1 bg-[#1e3a5f]" />
+          </div>
+
+          <Button
+            size="lg"
+            variant="outline"
+            className="gap-2.5 px-6 w-full"
+            onClick={handleManualEntry}
+            disabled={creating}
+          >
+            <PenLine size={18} />
+            {creating ? 'Creating...' : 'Manual Entry'}
+          </Button>
+        </div>
 
         <p className="text-xs text-[#1e3a5f] max-w-xs">
-          Requires read access to your GitHub Projects.
-          We never store your token.
+          Manual mode requires no login. Projects are stored temporarily and can be shared via URL.
         </p>
       </motion.div>
 
-      {/* Background decoration */}
       <div
         className="pointer-events-none fixed inset-0 -z-10"
         style={{

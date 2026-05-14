@@ -1,5 +1,6 @@
 import { handleAuth } from './routes/auth'
 import { handleGitHub } from './routes/github'
+import { handleManual } from './routes/manual'
 
 const REQUIRED_ENV = ['GITHUB_CLIENT_ID', 'GITHUB_CLIENT_SECRET'] as const
 for (const key of REQUIRED_ENV) {
@@ -65,6 +66,9 @@ const server = Bun.serve({
 
     const githubRes = await handleGitHub(req)
     if (githubRes) return addCors(addSecurity(githubRes), origin)
+
+    const manualRes = await handleManual(req)
+    if (manualRes) return addCors(addSecurity(manualRes), origin)
 
     if (IS_PRODUCTION) {
       const url = new URL(req.url)

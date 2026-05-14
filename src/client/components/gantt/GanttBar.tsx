@@ -18,6 +18,9 @@ function TooltipContent({ item }: { item: GanttItem }) {
   return (
     <div className="space-y-1.5 min-w-[200px]">
       <div className="font-medium text-[#e8f4fd]">{item.title}</div>
+      {item.description && (
+        <p className="text-xs text-[#7aa3c8] leading-relaxed">{item.description}</p>
+      )}
       <div className="flex items-center gap-1.5">
         <div
           className="h-2 w-2 rounded-sm"
