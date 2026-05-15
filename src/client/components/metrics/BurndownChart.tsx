@@ -47,7 +47,7 @@ export default function BurndownChart({ items }: Props) {
     <div className="flex flex-col">
       <div className="mb-1 text-sm font-medium text-[#e8f4fd]">Burndown</div>
       <ResponsiveContainer width="100%" height={200}>
-        <LineChart data={data} margin={{ top: 4, right: 8, bottom: 4, left: -16 }}>
+        <LineChart data={data} margin={{ top: 4, right: 8, bottom: 5, left: -16 }} className='mt-4 -ml-4'>
           <CartesianGrid strokeDasharray="3 3" stroke="#1e3a5f" />
           <XAxis
             dataKey="date"

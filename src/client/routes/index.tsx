@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { BarChart2, PenLine } from 'lucide-react'
+import { useNavigate, Link } from 'react-router-dom'
+import { BarChart2, PenLine, Plus, Pencil, Clock } from 'lucide-react'
 
 function GithubIcon({ size = 18 }: { size?: number }) {
   return (
@@ -12,12 +12,27 @@ function GithubIcon({ size = 18 }: { size?: number }) {
 import { motion } from 'motion/react'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
-import { createManualProject } from '@/lib/manual'
+import { Dialog, DialogTrigger, DialogContent } from '@/components/ui/dialog'
+import { createManualProject, listManualProjects } from '@/lib/manual'
+import type { ManualProjectSummary } from '@/lib/manual'
+
+function formatTimeAgo(timestamp: number): string {
+  const diffMs = Date.now() - timestamp
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+  if (diffDays === 0) return 'today'
+  if (diffDays === 1) return 'yesterday'
+  if (diffDays < 7) return `${diffDays}d ago`
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)}w ago`
+  if (diffDays < 365) return `${Math.floor(diffDays / 30)}mo ago`
+  return `${Math.floor(diffDays / 365)}y ago`
+}
 
 export default function IndexRoute() {
   const { isAuthenticated, isLoading } = useAuth()
   const navigate = useNavigate()
   const [creating, setCreating] = useState(false)
+  const [prevProjects, setPrevProjects] = useState<ManualProjectSummary[]>([])
+  const [menuOpen, setMenuOpen] = useState(false)
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
@@ -25,10 +40,17 @@ export default function IndexRoute() {
     }
   }, [isAuthenticated, isLoading, navigate])
 
-  async function handleManualEntry() {
+  useEffect(() => {
+    if (menuOpen) {
+      listManualProjects().then(setPrevProjects).catch(() => {})
+    }
+  }, [menuOpen])
+
+  async function handleNewProject() {
     setCreating(true)
     try {
       const project = await createManualProject('My Project')
+      setMenuOpen(false)
       navigate(`/manual/${project.id}/edit`)
     } catch {
       setCreating(false)
@@ -74,16 +96,79 @@ export default function IndexRoute() {
             <div className="h-px flex-1 bg-[#1e3a5f]" />
           </div>
 
-          <Button
-            size="lg"
-            variant="outline"
-            className="gap-2.5 px-6 w-full"
-            onClick={handleManualEntry}
-            disabled={creating}
-          >
-            <PenLine size={18} />
-            {creating ? 'Creating...' : 'Manual Entry'}
-          </Button>
+          <Dialog open={menuOpen} onOpenChange={setMenuOpen}>
+            <DialogTrigger asChild>
+              <Button size="lg" variant="outline" className="gap-2.5 px-6 w-full">
+                <PenLine size={18} />
+                Manual Entry
+              </Button>
+            </DialogTrigger>
+            <DialogContent title="Manual Projects">
+              <div className="space-y-4">
+                <button
+                  onClick={handleNewProject}
+                  disabled={creating}
+                  className="flex w-full items-center gap-3 rounded-lg border border-dashed border-[#1e3a5f] px-4 py-3 text-left text-[#7aa3c8] hover:border-[#4988C4] hover:text-[#e8f4fd] hover:bg-[#07172e] transition-colors disabled:opacity-50"
+                >
+                  <Plus size={18} className="text-[#4988C4]" />
+                  <div>
+                    <div className="text-sm font-medium">Create new project</div>
+                    <div className="text-xs text-[#7aa3c8]">Start from scratch with a blank task list</div>
+                  </div>
+                </button>
+
+                {prevProjects.length > 0 && (
+                  <>
+                    <div className="h-px bg-[#1e3a5f]" />
+                    <div className="space-y-1 max-h-60 overflow-auto">
+                      {prevProjects.map((p) => (
+                        <div
+                          key={p.id}
+                          className="flex items-center gap-3 rounded-lg border border-[#1e3a5f] bg-[#07172e] px-3 py-2.5"
+                        >
+                          <Link
+                            to={`/manual/${p.id}`}
+                            onClick={() => setMenuOpen(false)}
+                            className="min-w-0 flex-1 text-left hover:text-white transition-colors"
+                          >
+                            <div className="truncate text-sm text-[#e8f4fd]">{p.title}</div>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="text-xs text-[#7aa3c8]">{p.taskCount} tasks</span>
+                              <span className="text-[#1e3a5f]">·</span>
+                              <span className="flex items-center gap-1 text-xs text-[#7aa3c8]">
+                                <Clock size={10} />
+                                {formatTimeAgo(p.updatedAt)}
+                              </span>
+                            </div>
+                          </Link>
+                          <Link
+                            to={`/manual/${p.id}`}
+                            onClick={() => setMenuOpen(false)}
+                            className="rounded p-1.5 text-[#7aa3c8] hover:bg-[#1e3a5f] hover:text-[#e8f4fd] transition-colors"
+                          >
+                            <BarChart2 size={14} />
+                          </Link>
+                          <Link
+                            to={`/manual/${p.id}/edit`}
+                            onClick={() => setMenuOpen(false)}
+                            className="rounded p-1.5 text-[#7aa3c8] hover:bg-[#1e3a5f] hover:text-[#e8f4fd] transition-colors"
+                          >
+                            <Pencil size={14} />
+                          </Link>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {prevProjects.length === 0 && (
+                  <p className="text-xs text-[#1e3a5f] text-center pt-2">
+                    No previous projects found.
+                  </p>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
 
         <p className="text-xs text-[#1e3a5f] max-w-xs">

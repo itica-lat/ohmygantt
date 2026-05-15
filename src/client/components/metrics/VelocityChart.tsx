@@ -40,16 +40,22 @@ export default function VelocityChart({ items }: Props) {
     byWeek.set(key, (byWeek.get(key) ?? 0) + 1)
   }
 
-  const sorted = [...byWeek.entries()]
-    .sort((a, b) => a[0].localeCompare(b[0]))
-    .slice(-8)
-    .map(([iso, count]) => ({ week: getWeekLabel(new Date(iso)), count }))
+  const weekKeys = [...byWeek.keys()].sort()
+  const firstWeek = new Date(weekKeys[0]!)
+  const lastWeek = new Date(weekKeys[weekKeys.length - 1]!)
+  const filled: Array<{ week: string; count: number }> = []
+  for (let d = new Date(firstWeek); d <= lastWeek; d.setDate(d.getDate() + 7)) {
+    const key = d.toISOString()
+    filled.push({ week: getWeekLabel(new Date(d)), count: byWeek.get(key) ?? 0 })
+  }
+  const sorted = filled.slice(-8)
 
   return (
-    <div className="flex flex-col">
+    <div className="w-full">
       <div className="mb-1 text-sm font-medium text-[#e8f4fd]">Velocity (items/week)</div>
       <ResponsiveContainer width="100%" height={180}>
-        <BarChart data={sorted} margin={{ top: 4, right: 8, bottom: 4, left: -16 }}>
+        <BarChart data={sorted} margin={{   top: 4, right: 8, bottom: 4, left: -16 }} className='mt-6 -ml-4'>
+
           <CartesianGrid strokeDasharray="3 3" stroke="#1e3a5f" vertical={false} />
           <XAxis
             dataKey="week"

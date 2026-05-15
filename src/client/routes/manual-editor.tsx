@@ -4,6 +4,7 @@ import { Plus, Trash2, BarChart2, Share2, Link as LinkIcon, X, ArrowLeft, Check 
 import { getManualProject, updateManualProject, generateShareLink, revokeShareLink } from '@/lib/manual'
 import type { ManualTask, ManualProject } from '@/lib/manual'
 import { Button } from '@/components/ui/button'
+import DependencySelect from '@/components/gantt/DependencySelect'
 import { Dialog, DialogTrigger, DialogContent } from '@/components/ui/dialog'
 
 function genId(): string {
@@ -235,23 +236,12 @@ export default function ManualEditorRoute() {
                       />
                     </td>
                     <td className="px-2 py-2">
-                      <select
-                        multiple
+                      <DependencySelect
+                        taskId={task.id}
                         value={task.dependencies}
-                        onChange={(e) => {
-                          const selected = Array.from(e.target.selectedOptions, (o) => o.value)
-                          updateTask(task.id, { dependencies: selected })
-                        }}
-                        className="w-full rounded border border-[#1e3a5f] bg-[#07172e] px-2 py-1.5 text-xs text-[#e8f4fd] outline-none focus:border-[#4988C4] min-h-[60px]"
-                      >
-                        {availableDeps
-                          .filter((d) => d.id !== task.id)
-                          .map((d) => (
-                            <option key={d.id} value={d.id} className="py-0.5">
-                              {d.label}
-                            </option>
-                          ))}
-                      </select>
+                        availableDeps={availableDeps}
+                        onChange={(deps) => updateTask(task.id, { dependencies: deps })}
+                      />
                     </td>
                     <td className="px-3 py-2 align-top pt-3.5">
                       <button

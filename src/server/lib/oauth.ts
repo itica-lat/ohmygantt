@@ -46,12 +46,15 @@ export async function validateState(state: string): Promise<boolean> {
   return sig === expected
 }
 
-export function buildAuthUrl(state: string): string {
+export function buildAuthUrl(state: string, origin?: string): string {
+  const redirect_uri = origin
+    ? `${origin}/auth/callback`
+    : `${process.env.VITE_APP_URL ?? 'http://localhost:5173'}/auth/callback`
   const params = new URLSearchParams({
     client_id: process.env.GITHUB_CLIENT_ID ?? '',
     scope: 'read:project,read:org,repo,read:user',
     state,
-    redirect_uri: `${process.env.VITE_APP_URL ?? 'http://localhost:5173'}/auth/callback`,
+    redirect_uri,
   })
   return `${GITHUB_AUTH_URL}?${params}`
 }

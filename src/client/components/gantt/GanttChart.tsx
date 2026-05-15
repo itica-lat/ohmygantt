@@ -121,10 +121,12 @@ export default function GanttChart({ items }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null)
 
   const { chartStart, chartEnd, totalWidth, todayOffset } = useMemo(() => {
+    const today = startOfDay(new Date())
+    const endOfYear = new Date(today.getFullYear(), 11, 31)
+
     if (items.length === 0) {
-      const today = new Date()
       const start = addDays(today, -7)
-      const end = addDays(today, 60)
+      const end = new Date(Math.max(addDays(today, 60).getTime(), endOfYear.getTime()))
       return {
         chartStart: startOfDay(start),
         chartEnd: startOfDay(end),
@@ -136,9 +138,8 @@ export default function GanttChart({ items }: Props) {
     const minStart = new Date(Math.min(...items.map((i) => i.start.getTime())))
     const maxEnd = new Date(Math.max(...items.map((i) => i.end.getTime())))
     const start = addDays(startOfDay(minStart), -7)
-    const end = addDays(startOfDay(maxEnd), 7)
+    const end = new Date(Math.max(addDays(startOfDay(maxEnd), 7).getTime(), endOfYear.getTime()))
     const total = daysBetween(start, end) * DAY_WIDTH
-    const today = startOfDay(new Date())
     const todayOff = daysBetween(start, today) * DAY_WIDTH
 
     return { chartStart: start, chartEnd: end, totalWidth: total, todayOffset: todayOff }

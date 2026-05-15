@@ -25,8 +25,8 @@ export default function StatusDonut({ items }: Props) {
   return (
     <div className="flex flex-col">
       <div className="mb-1 text-sm font-medium text-[#e8f4fd]">Status distribution</div>
-      <ResponsiveContainer width="100%" height={220}>
-        <PieChart>
+      <ResponsiveContainer width="100%" height={240}>
+        <PieChart className='mt-5'>
           <Pie
             data={data}
             cx="50%"
