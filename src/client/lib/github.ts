@@ -42,6 +42,7 @@ export type ProjectItemContent = {
   state: 'OPEN' | 'CLOSED'
   assignees: { nodes: Assignee[] }
   labels: { nodes: Label[] }
+  milestone: { title: string; description: string; dueOn: string | null } | null
   createdAt: string
   closedAt: string | null
 }
@@ -165,6 +166,18 @@ export const GET_PROJECT_ITEMS_QUERY = `
                 state
                 assignees(first: 5) { nodes { login avatarUrl } }
                 labels(first: 10) { nodes { name color } }
+                milestone { title description dueOn }
+                createdAt
+                closedAt
+              }
+              ... on PullRequest {
+                title
+                number
+                url
+                state
+                assignees(first: 5) { nodes { login avatarUrl } }
+                labels(first: 10) { nodes { name color } }
+                milestone { title description dueOn }
                 createdAt
                 closedAt
               }

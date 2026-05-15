@@ -8,19 +8,21 @@ export type ItemFilters = {
   statuses: string[]
   assignees: string[]
   iterations: string[]
+  milestones: string[]
 }
 
 export function useItems(
   projectId: string,
-  filters: ItemFilters = { codes: [], statuses: [], assignees: [], iterations: [] }
+  filters: ItemFilters = { codes: [], statuses: [], assignees: [], iterations: [], milestones: [] }
 ): {
   items: GanttItem[]
   allItems: GanttItem[]
   isLoading: boolean
+  isRefetching: boolean
   error: Error | null
   projectTitle: string
 } {
-  const { data, isLoading, error } = useProjectItems(projectId)
+  const { data, isLoading, error, isFetching } = useProjectItems(projectId)
 
   const allItems = useMemo(() => {
     if (!data?.items) return []
@@ -33,6 +35,7 @@ export function useItems(
     items,
     allItems,
     isLoading,
+    isRefetching: isFetching && !isLoading,
     error: error as Error | null,
     projectTitle: data?.title ?? '',
   }

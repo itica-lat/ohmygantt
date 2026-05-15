@@ -74,6 +74,11 @@ export default function GanttRow({
             >
               {item.code}
             </Badge>
+            {item.milestone && (
+              <span className="font-mono text-[10px] text-[#64CCC5] truncate max-w-[100px]">
+                {item.milestone.title}
+              </span>
+            )}
           </div>
         </div>
         {item.assignees.slice(0, 2).map((a) => (

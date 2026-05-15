@@ -96,6 +96,7 @@ export function useProjectItems(projectId: string) {
       return { title, items: allItems }
     },
     staleTime: 1000 * 60 * 5,
+    refetchInterval: 30_000,
     retry: 1,
     enabled: !!projectId,
   })

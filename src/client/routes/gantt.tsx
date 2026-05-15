@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, BarChart2, Code2, Copy, Check } from 'lucide-react'
+import { ArrowLeft, BarChart2, Code2, Share2, Copy, Check } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useItems, type ItemFilters } from '@/hooks/useItems'
-import { getUniqueCodes, getUniqueAssignees, getUniqueIterations } from '@/lib/gantt'
+import { getUniqueCodes, getUniqueAssignees, getUniqueIterations, getUniqueMilestones } from '@/lib/gantt'
+import type { GanttItem } from '@/lib/gantt'
 import Shell from '@/components/layout/Shell'
 import GanttChart from '@/components/gantt/GanttChart'
 import GanttFilters from '@/components/gantt/GanttFilters'
@@ -47,19 +48,106 @@ function EmbedDialog({ projectId }: { projectId: string }) {
   )
 }
 
+function ShareDialog({ projectTitle, allItems }: { projectTitle: string; allItems: GanttItem[] }) {
+  const [open, setOpen] = useState(false)
+  const [shareId, setShareId] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
+
+  async function createShare() {
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/share', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: projectTitle, items: allItems }),
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error((body as { error?: string }).error ?? 'Failed to create share link')
+      }
+      const data = (await res.json()) as { shareId: string }
+      setShareId(data.shareId)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const shareUrl = shareId ? `${window.location.origin}/share/${shareId}` : ''
+
+  function copyLink() {
+    if (!shareUrl) return
+    navigator.clipboard.writeText(shareUrl)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setShareId(null); setError(null); setCopied(false) } }}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm" className="gap-1.5">
+          <Share2 size={14} />
+          Share
+        </Button>
+      </DialogTrigger>
+      <DialogContent title="Share Gantt">
+        {loading ? (
+          <div className="flex items-center justify-center py-6">
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#4988C4] border-t-transparent" />
+          </div>
+        ) : error ? (
+          <div className="rounded-lg border border-red-900 bg-red-950/30 px-4 py-3 text-sm text-red-400">
+            {error}
+          </div>
+        ) : !shareId ? (
+          <div>
+            <p className="mb-4 text-xs text-[#7aa3c8]">
+              Generate a shareable link that lets anyone view this Gantt chart without logging in.
+            </p>
+            <Button onClick={createShare} size="sm" className="gap-1.5">
+              <Share2 size={14} />
+              Generate link
+            </Button>
+          </div>
+        ) : (
+          <div>
+            <p className="mb-3 text-xs text-[#7aa3c8]">
+              Anyone with this link can view the Gantt chart. No login required.
+            </p>
+            <div className="relative rounded-md bg-[#07172e] border border-[#1e3a5f] p-3 font-mono text-xs text-[#7aa3c8] break-all">
+              {shareUrl}
+              <button
+                onClick={copyLink}
+                className="absolute right-2 top-2 rounded p-1 text-[#7aa3c8] hover:bg-[#1e3a5f] hover:text-[#e8f4fd] transition-colors"
+              >
+                {copied ? <Check size={13} className="text-[#64CCC5]" /> : <Copy size={13} />}
+              </button>
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 export default function GanttRoute() {
   const { projectId = '' } = useParams<{ projectId: string }>()
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const isEmbed = searchParams.get('embed') === 'true'
 
-  const [filters, setFilters] = useState<ItemFilters>({ codes: [], statuses: [], assignees: [], iterations: [] })
+  const [filters, setFilters] = useState<ItemFilters>({ codes: [], statuses: [], assignees: [], iterations: [], milestones: [] })
 
-  const { items, allItems, isLoading, error, projectTitle } = useItems(projectId, filters)
+  const { items, allItems, isLoading, isRefetching, error, projectTitle } = useItems(projectId, filters)
 
   const availableCodes = useMemo(() => getUniqueCodes(allItems), [allItems])
   const availableAssignees = useMemo(() => getUniqueAssignees(allItems), [allItems])
   const availableIterations = useMemo(() => getUniqueIterations(allItems), [allItems])
+  const availableMilestones = useMemo(() => getUniqueMilestones(allItems), [allItems])
 
   if (isEmbed) {
     if (isLoading) {
@@ -97,6 +185,7 @@ export default function GanttRoute() {
               {!isLoading && (
                 <p className="text-xs text-[#7aa3c8]">
                   {items.length} of {allItems.length} items
+                  {isRefetching && <span className="ml-2 text-[#4988C4]">Updating...</span>}
                 </p>
               )}
             </div>
@@ -112,6 +201,7 @@ export default function GanttRoute() {
               <BarChart2 size={14} />
               Metrics
             </Button>
+            <ShareDialog projectTitle={projectTitle} allItems={allItems} />
             <EmbedDialog projectId={projectId} />
           </div>
         </div>
@@ -121,6 +211,7 @@ export default function GanttRoute() {
           availableCodes={availableCodes}
           availableAssignees={availableAssignees}
           availableIterations={availableIterations}
+          availableMilestones={availableMilestones}
           filters={filters}
           onChange={setFilters}
         />

@@ -7,6 +7,7 @@ type Props = {
   availableCodes: string[]
   availableAssignees: string[]
   availableIterations: string[]
+  availableMilestones: string[]
   filters: ItemFilters
   onChange: (filters: ItemFilters) => void
 }
@@ -15,12 +16,13 @@ function toggle(arr: string[], value: string): string[] {
   return arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value]
 }
 
-export default function GanttFilters({ availableCodes, availableAssignees, availableIterations, filters, onChange }: Props) {
+export default function GanttFilters({ availableCodes, availableAssignees, availableIterations, availableMilestones, filters, onChange }: Props) {
   const hasFilters =
     filters.codes.length > 0 ||
     filters.statuses.length > 0 ||
     filters.assignees.length > 0 ||
-    filters.iterations.length > 0
+    filters.iterations.length > 0 ||
+    filters.milestones.length > 0
 
   return (
     <div className="flex flex-wrap items-center gap-3 border-b border-[#1e3a5f] bg-[#07172e] px-5 py-2.5">
@@ -107,12 +109,33 @@ export default function GanttFilters({ availableCodes, availableAssignees, avail
         </div>
       )}
 
+      {availableMilestones.length > 1 && (
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs text-[#7aa3c8]">Milestone</span>
+          <div className="flex gap-1">
+            {availableMilestones.map((m) => (
+              <button
+                key={m}
+                onClick={() => onChange({ ...filters, milestones: toggle(filters.milestones, m) })}
+                className={`rounded-sm px-2 py-0.5 text-xs font-medium transition-colors ${
+                  filters.milestones.length === 0 || filters.milestones.includes(m)
+                    ? 'bg-[#1e3a5f] text-[#e8f4fd]'
+                    : 'bg-[#0d2040] text-[#7aa3c8]'
+                }`}
+              >
+                {m}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {hasFilters && (
         <Button
           variant="ghost"
           size="sm"
           className="h-6 gap-1 px-2 text-xs text-[#7aa3c8]"
-          onClick={() => onChange({ codes: [], statuses: [], assignees: [], iterations: [] })}
+          onClick={() => onChange({ codes: [], statuses: [], assignees: [], iterations: [], milestones: [] })}
         >
           <X size={11} />
           Clear

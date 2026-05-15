@@ -13,6 +13,7 @@ export type GanttItem = {
   url: string
   labels: Array<{ name: string; color: string }>
   iteration: string | null
+  milestone: { title: string; description: string; dueOn: string | null } | null
   description?: string
   dependencies?: string[]
 }
@@ -116,6 +117,7 @@ export function mapItemsToGantt(items: ProjectItem[]): GanttItem[] {
         url: item.content.url,
         labels: item.content.labels.nodes,
         iteration: iteration?.title ?? null,
+        milestone: item.content.milestone,
       }
     })
     .sort((a, b) => a.start.getTime() - b.start.getTime())
@@ -144,6 +146,10 @@ export function getUniqueIterations(items: GanttItem[]): string[] {
     }
   }
   return result
+}
+
+export function getUniqueMilestones(items: GanttItem[]): string[] {
+  return [...new Set(items.map((i) => i.milestone?.title).filter(Boolean) as string[])].sort()
 }
 
 export const MANUAL_PROGRESS: Record<string, number> = {
@@ -186,7 +192,7 @@ export function mapManualTaskToGantt(
 
 export function filterItems(
   items: GanttItem[],
-  filters: { codes: string[]; statuses: string[]; assignees: string[]; iterations: string[] }
+  filters: { codes: string[]; statuses: string[]; assignees: string[]; iterations: string[]; milestones: string[] }
 ): GanttItem[] {
   return items.filter((item) => {
     if (filters.codes.length > 0 && !filters.codes.includes(item.code)) return false
@@ -199,6 +205,11 @@ export function filterItems(
     if (
       filters.iterations.length > 0 &&
       (item.iteration === null || !filters.iterations.includes(item.iteration))
+    )
+      return false
+    if (
+      filters.milestones.length > 0 &&
+      (!item.milestone?.title || !filters.milestones.includes(item.milestone.title))
     )
       return false
     return true

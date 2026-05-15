@@ -35,6 +35,12 @@ function TooltipContent({ item }: { item: GanttItem }) {
       <div className="text-[#7aa3c8]">
         {formatDateFull(item.start)} → {formatDateFull(item.end)}
       </div>
+      {item.milestone && (
+        <div className="text-[#64CCC5] text-xs">
+          Milestone: {item.milestone.title}
+          {item.milestone.dueOn && ` (due ${formatDateFull(new Date(item.milestone.dueOn))})`}
+        </div>
+      )}
       {item.assignees.length > 0 && (
         <div className="flex gap-1">
           {item.assignees.map((a) => (
