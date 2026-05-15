@@ -8,6 +8,8 @@ import ManualEditorRoute from './routes/manual-editor'
 import ManualGanttRoute from './routes/manual-gantt'
 import ManualSharedRoute from './routes/manual-shared'
 import ShareRoute from './routes/share'
+import TrelloImportRoute from './routes/trello-import'
+import TrelloViewRoute from './routes/trello-view'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -32,6 +34,8 @@ export default function App() {
           <Route path="/manual/:projectId" element={<ManualGanttRoute />} />
           <Route path="/manual/shared/:shareId" element={<ManualSharedRoute />} />
           <Route path="/share/:shareId" element={<ShareRoute />} />
+          <Route path="/trello/import" element={<TrelloImportRoute />} />
+          <Route path="/trello/:id" element={<TrelloViewRoute />} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>

@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { FolderKanban, ExternalLink, ChevronRight, AlertTriangle } from 'lucide-react'
+import { FolderKanban, ExternalLink, ChevronRight, AlertTriangle, Columns3 } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useAuth } from '@/hooks/useAuth'
 import { useListProjects } from '@/hooks/useProject'
@@ -103,6 +103,36 @@ export default function DashboardRoute() {
             <h2 className="text-lg font-semibold text-[#e8f4fd]">Projects</h2>
             <p className="text-sm text-[#7aa3c8]">Your personal and organization GitHub Projects</p>
           </div>
+
+          {/* Trello Import Card */}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.22 }}
+            className="mb-4"
+          >
+            <button
+              className="w-full text-left"
+              onClick={() => navigate('/trello/import')}
+            >
+              <Card className="cursor-pointer transition-colors hover:border-[#4988C4] hover:bg-[#0d2040]">
+                <CardHeader>
+                  <div className="flex items-start gap-3">
+                    <Columns3 size={18} className="mt-0.5 shrink-0 text-[#4988C4]" />
+                    <div className="min-w-0 flex-1">
+                      <CardTitle className="text-sm">Import from Trello</CardTitle>
+                      <CardDescription className="mt-1 text-xs">
+                        Import a Trello board and view it as a Gantt chart
+                      </CardDescription>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <ChevronRight size={14} className="text-[#1e3a5f]" />
+                  </div>
+                </CardHeader>
+              </Card>
+            </button>
+          </motion.div>
 
           {isLoading && (
             <div className="flex items-center justify-center py-16">

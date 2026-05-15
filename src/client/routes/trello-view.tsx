@@ -1,0 +1,143 @@
+import { useState, useEffect, useMemo } from 'react'
+import { useParams } from 'react-router-dom'
+import { BarChart2, ExternalLink } from 'lucide-react'
+import type { GanttItem } from '@/lib/gantt'
+import GanttChart from '@/components/gantt/GanttChart'
+import { Badge } from '@/components/ui/badge'
+
+type TrelloBoard = {
+  id: string
+  name: string
+  items: TrelloItem[]
+}
+
+type TrelloItem = {
+  id: string
+  title: string
+  startDate: string | null
+  due: string | null
+  listName: string
+  url: string
+  labels: Array<{ name: string; color: string }>
+}
+
+export default function TrelloViewRoute() {
+  const { id = '' } = useParams<{ id: string }>()
+  const [data, setData] = useState<TrelloBoard | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    setError(null)
+
+    fetch(`/api/trello/${encodeURIComponent(id)}`)
+      .then(async (res) => {
+        if (!res.ok) {
+          if (res.status === 404) throw new Error('Trello board not found.')
+          throw new Error('Failed to load Trello board.')
+        }
+        return res.json() as Promise<TrelloBoard>
+      })
+      .then((result) => {
+        if (!cancelled) setData(result)
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err instanceof Error ? err.message : 'Something went wrong')
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+
+    return () => { cancelled = true }
+  }, [id])
+
+  const items = useMemo((): GanttItem[] => {
+    if (!data) return []
+    return data.items.map((item, index) => {
+      const now = new Date()
+      const start = item.startDate
+        ? new Date(item.startDate)
+        : item.due
+          ? new Date(new Date(item.due).getTime() - 7 * 86400000)
+          : now
+
+      const end = item.due
+        ? new Date(item.due)
+        : new Date(now.getTime() + 7 * 86400000)
+
+      const listNameLower = (item.listName ?? '').toLowerCase()
+      let status: string
+      if (listNameLower === 'done' || listNameLower === 'complete') {
+        status = 'Done'
+      } else if (listNameLower === 'in progress') {
+        status = 'In progress'
+      } else {
+        status = 'To do'
+      }
+
+      return {
+        id: item.id,
+        title: item.title,
+        code: 'TRL',
+        start,
+        end,
+        status,
+        assignees: [],
+        progress: status === 'Done' ? 1 : 0,
+        issueNumber: index + 1,
+        url: item.url,
+        labels: item.labels ?? [],
+        iteration: null,
+        milestone: null,
+      }
+    })
+  }, [data])
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-[#07172e]">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#4988C4] border-t-transparent" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex h-screen flex-col items-center justify-center gap-4 bg-[#07172e] px-4 text-center">
+        <BarChart2 size={32} className="text-[#1e3a5f]" />
+        <p className="text-sm text-[#7aa3c8]">{error}</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex h-screen flex-col bg-[#07172e] text-[#e8f4fd]">
+      <header className="flex h-14 shrink-0 items-center justify-between border-b border-[#1e3a5f] bg-[#07172e] px-5">
+        <div className="flex items-center gap-3">
+          <BarChart2 size={20} className="text-[#4988C4]" />
+          <span className="font-semibold text-sm tracking-wide">Gantt</span>
+          <span className="text-[#1e3a5f]">/</span>
+          <span className="text-sm text-[#e8f4fd] font-medium">
+            {data?.name ?? 'Trello Board'}
+          </span>
+        </div>
+        <Badge variant="outline" className="text-xs text-[#7aa3c8] border-[#1e3a5f]">
+          <ExternalLink size={11} className="mr-1" />
+          Imported view
+        </Badge>
+      </header>
+
+      <div className="flex-1 overflow-hidden">
+        {items.length === 0 ? (
+          <div className="flex h-full items-center justify-center text-sm text-[#7aa3c8]">
+            No items found in this Trello board.
+          </div>
+        ) : (
+          <GanttChart items={items} />
+        )}
+      </div>
+    </div>
+  )
+}
