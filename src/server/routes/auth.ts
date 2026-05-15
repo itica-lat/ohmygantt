@@ -24,7 +24,8 @@ export async function handleAuth(req: Request): Promise<Response | null> {
   if (url.pathname === '/auth/github' && req.method === 'GET') {
     const state = await generateState()
     const host = req.headers.get('host') ?? url.host
-    const origin = req.headers.get('origin') ?? `${url.protocol}//${host}`
+    const proto = req.headers.get('x-forwarded-proto') ?? url.protocol.slice(0, -1)
+    const origin = req.headers.get('origin') ?? `${proto}://${host}`
     return new Response(null, {
       status: 302,
       headers: { Location: buildAuthUrl(state, origin) },
