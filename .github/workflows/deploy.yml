@@ -1,0 +1,27 @@
+name: Deploy OhMyGantt
+
+on:
+  push:
+    branches: [main, master]
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Fetch latest code
+        working-directory: /home/hermes/repos/ohmygantt
+        run: |
+          git fetch origin main 2>/dev/null || git fetch origin master 2>/dev/null
+          git reset --hard origin/main 2>/dev/null || git reset --hard origin/master 2>/dev/null
+
+      - name: Install dependencies
+        working-directory: /home/hermes/repos/ohmygantt
+        run: bun install
+
+      - name: Build frontend
+        working-directory: /home/hermes/repos/ohmygantt
+        run: bun run build
+
+      - name: Restart service
+        run: sudo /usr/bin/systemctl restart ohmygantt.service
