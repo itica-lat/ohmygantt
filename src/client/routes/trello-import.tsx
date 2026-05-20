@@ -55,7 +55,7 @@ export default function TrelloImportRoute() {
       const saveRes = await fetch('/api/trello/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: importData.boardName, items: importData.items }),
+        body: JSON.stringify({ title: importData.boardName, items: importData.items, boardUrl: boardUrl.trim() }),
       })
 
       if (!saveRes.ok) {

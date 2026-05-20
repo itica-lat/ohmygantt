@@ -1,14 +1,16 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
-import { BarChart2, ExternalLink } from 'lucide-react'
+import { BarChart2, ExternalLink, RefreshCw } from 'lucide-react'
 import type { GanttItem } from '@/lib/gantt'
 import GanttChart from '@/components/gantt/GanttChart'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 
 type TrelloBoard = {
   id: string
   name: string
   items: TrelloItem[]
+  board_url?: string | null
 }
 
 type TrelloItem = {
@@ -27,8 +29,13 @@ export default function TrelloViewRoute() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    let cancelled = false
+  const [refreshing, setRefreshing] = useState(false)
+  const [showRefreshForm, setShowRefreshForm] = useState(false)
+  const [apiKey, setApiKey] = useState('')
+  const [token, setToken] = useState('')
+  const [refreshError, setRefreshError] = useState<string | null>(null)
+
+  const loadBoard = () => {
     setLoading(true)
     setError(null)
 
@@ -41,17 +48,48 @@ export default function TrelloViewRoute() {
         return res.json() as Promise<TrelloBoard>
       })
       .then((result) => {
-        if (!cancelled) setData(result)
+        setData(result)
       })
       .catch((err) => {
-        if (!cancelled) setError(err instanceof Error ? err.message : 'Something went wrong')
+        setError(err instanceof Error ? err.message : 'Something went wrong')
       })
       .finally(() => {
-        if (!cancelled) setLoading(false)
+        setLoading(false)
+      })
+  }
+
+  useEffect(() => {
+    loadBoard()
+  }, [id])
+
+  const handleRefresh = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setRefreshError(null)
+    setRefreshing(true)
+
+    try {
+      const res = await fetch(`/api/trello/${encodeURIComponent(id)}/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ apiKey: apiKey.trim(), token: token.trim() }),
       })
 
-    return () => { cancelled = true }
-  }, [id])
+      if (!res.ok) {
+        const errData = await res.json().catch(() => null)
+        throw new Error(errData?.error ?? 'Refresh failed')
+      }
+
+      const result = await res.json()
+      setData((prev) => prev ? { ...prev, name: result.boardName, items: result.items } : prev)
+      setShowRefreshForm(false)
+      setApiKey('')
+      setToken('')
+    } catch (err) {
+      setRefreshError(err instanceof Error ? err.message : 'Refresh failed. Please try again.')
+    } finally {
+      setRefreshing(false)
+    }
+  }
 
   const items = useMemo((): GanttItem[] => {
     if (!data) return []
@@ -123,11 +161,60 @@ export default function TrelloViewRoute() {
             {data?.name ?? 'Trello Board'}
           </span>
         </div>
-        <Badge variant="outline" className="text-xs text-[#7aa3c8] border-[#1e3a5f]">
-          <ExternalLink size={11} className="mr-1" />
-          Imported view
-        </Badge>
+        <div className="flex items-center gap-3">
+          <Badge variant="outline" className="text-xs text-[#7aa3c8] border-[#1e3a5f]">
+            <ExternalLink size={11} className="mr-1" />
+            Imported view
+          </Badge>
+          <button
+            onClick={() => setShowRefreshForm(!showRefreshForm)}
+            className="flex items-center gap-1 text-xs text-[#7aa3c8] hover:text-[#4988C4] transition-colors"
+          >
+            <RefreshCw size={13} />
+            Refresh
+          </button>
+        </div>
       </header>
+
+      {showRefreshForm && (
+        <div className="border-b border-[#1e3a5f] bg-[#0d2040] px-5 py-4">
+          <form onSubmit={handleRefresh} className="flex flex-wrap items-end gap-3">
+            <div className="flex-1 min-w-[180px]">
+              <label className="block text-xs text-[#7aa3c8] mb-1">API Key</label>
+              <input
+                type="password"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                placeholder="Trello API key"
+                className="w-full h-8 px-3 rounded border border-[#1e3a5f] bg-[#07172e] text-sm text-[#e8f4fd] placeholder-[#4a6f8f] focus:outline-none focus:ring-1 focus:ring-[#4988C4]"
+              />
+            </div>
+            <div className="flex-1 min-w-[180px]">
+              <label className="block text-xs text-[#7aa3c8] mb-1">Token</label>
+              <input
+                type="password"
+                value={token}
+                onChange={(e) => setToken(e.target.value)}
+                placeholder="Trello token"
+                className="w-full h-8 px-3 rounded border border-[#1e3a5f] bg-[#07172e] text-sm text-[#e8f4fd] placeholder-[#4a6f8f] focus:outline-none focus:ring-1 focus:ring-[#4988C4]"
+              />
+            </div>
+            <Button type="submit" disabled={refreshing || !apiKey.trim() || !token.trim()} size="sm" className="h-8">
+              {refreshing ? (
+                <span className="flex items-center gap-2">
+                  <div className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  Syncing...
+                </span>
+              ) : (
+                'Sync'
+              )}
+            </Button>
+          </form>
+          {refreshError && (
+            <p className="mt-2 text-xs text-red-400">{refreshError}</p>
+          )}
+        </div>
+      )}
 
       <div className="flex-1 overflow-hidden">
         {items.length === 0 ? (
