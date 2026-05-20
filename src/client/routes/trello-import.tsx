@@ -42,7 +42,7 @@ export default function TrelloImportRoute() {
       const importRes = await fetch('/api/trello/import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ boardId, apiKey: apiKey.trim(), token: token.trim() }),
+        body: JSON.stringify({ boardUrl: boardUrl.trim(), apiKey: apiKey.trim(), token: token.trim() }),
       })
 
       if (!importRes.ok) {
@@ -55,7 +55,7 @@ export default function TrelloImportRoute() {
       const saveRes = await fetch('/api/trello/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: importData.id, name: importData.name, items: importData.items }),
+        body: JSON.stringify({ title: importData.boardName, items: importData.items }),
       })
 
       if (!saveRes.ok) {
