@@ -13,16 +13,41 @@ type Props = {
   items: GanttItem[]
 }
 
+function MilestoneDiamond({
+  offset,
+  label,
+}: {
+  offset: number
+  label: string
+}) {
+  return (
+    <div
+      className="absolute top-1/2 -translate-y-1/2 z-20 group"
+      style={{ left: offset - 6 }}
+    >
+      <div
+        className="h-3 w-3 rotate-45 border border-[#64CCC5] bg-[#64CCC5]"
+        style={{ opacity: 0.4 }}
+      />
+      <div className="absolute left-1/2 -translate-x-1/2 top-4 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-30 bg-[#0d2040] border border-[#1e3a5f] rounded px-2 py-1 text-[10px] text-[#64CCC5] font-medium pointer-events-none">
+        {label}
+      </div>
+    </div>
+  )
+}
+
 function GanttTimeline({
   chartStart,
   chartEnd,
   totalWidth,
   todayOffset,
+  milestones,
 }: {
   chartStart: Date
   chartEnd: Date
   totalWidth: number
   todayOffset: number | null
+  milestones: { title: string; date: Date }[]
 }) {
   const monthSpans = useMemo(
     () => getMonthSpans(chartStart, chartEnd, DAY_WIDTH),
@@ -111,6 +136,15 @@ function GanttTimeline({
               }}
             />
           )}
+
+          {/* Milestone diamonds in header */}
+          {milestones.map((m) => {
+            const offset = daysBetween(chartStart, m.date) * DAY_WIDTH
+            if (offset < 0 || offset > totalWidth) return null
+            return (
+              <MilestoneDiamond key={m.title} offset={offset} label={m.title} />
+            )
+          })}
         </div>
       </div>
     </div>
@@ -119,6 +153,16 @@ function GanttTimeline({
 
 export default function GanttChart({ items }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null)
+
+  const milestones = useMemo(() => {
+    const map = new Map<string, Date>()
+    for (const item of items) {
+      if (item.milestone?.dueOn && !map.has(item.milestone.title)) {
+        map.set(item.milestone.title, startOfDay(new Date(item.milestone.dueOn)))
+      }
+    }
+    return Array.from(map.entries()).map(([title, date]) => ({ title, date })).sort((a, b) => a.date.getTime() - b.date.getTime())
+  }, [items])
 
   const { chartStart, chartEnd, totalWidth, todayOffset } = useMemo(() => {
     const today = startOfDay(new Date())
@@ -163,6 +207,7 @@ export default function GanttChart({ items }: Props) {
               chartEnd={chartEnd}
               totalWidth={totalWidth}
               todayOffset={todayOffset}
+              milestones={milestones}
             />
 
             {/* Today vertical line through rows */}
@@ -178,6 +223,24 @@ export default function GanttChart({ items }: Props) {
                   }}
                 />
               )}
+
+              {/* Milestone vertical dashed lines through rows */}
+              {milestones.map((m) => {
+                const offset = daysBetween(chartStart, m.date) * DAY_WIDTH
+                if (offset < 0 || offset > totalWidth) return null
+                return (
+                  <div
+                    key={m.title}
+                    className="absolute top-0 bottom-0 z-10 pointer-events-none"
+                    style={{
+                      left: SIDEBAR_WIDTH + offset,
+                      width: 1,
+                      borderLeft: '1px dashed #64CCC5',
+                      opacity: 0.3,
+                    }}
+                  />
+                )
+              })}
 
               {items.map((item, idx) => (
                 <GanttRow

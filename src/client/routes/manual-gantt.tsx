@@ -13,7 +13,7 @@ export default function ManualGanttRoute() {
   const navigate = useNavigate()
   const [project, setProject] = useState<ManualProject | null>(null)
   const [loading, setLoading] = useState(true)
-  const [filters, setFilters] = useState<ItemFilters>({ codes: [], statuses: [], assignees: [], iterations: [] })
+  const [filters, setFilters] = useState<ItemFilters>({ codes: [], statuses: [], assignees: [], iterations: [], milestones: [] })
 
   useEffect(() => {
     getManualProject(projectId)

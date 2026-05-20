@@ -185,6 +185,7 @@ export function mapManualTaskToGantt(
     url: '',
     labels: [],
     iteration: null,
+    milestone: null,
     description: task.description,
     dependencies: task.dependencies,
   }
