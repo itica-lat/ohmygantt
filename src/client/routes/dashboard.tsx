@@ -74,6 +74,7 @@ function ProjectCard({ project, index }: { project: ProjectNodeWithOwner; index:
 }
 
 export default function DashboardRoute() {
+  const navigate = useNavigate()
   const { user } = useAuth()
   const { data, isLoading, error } = useListProjects(user?.login ?? '')
   const projects = data?.projects ?? []
