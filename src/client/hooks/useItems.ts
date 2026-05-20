@@ -21,8 +21,9 @@ export function useItems(
   isRefetching: boolean
   error: Error | null
   projectTitle: string
+  refetch: () => void
 } {
-  const { data, isLoading, error, isFetching } = useProjectItems(projectId)
+  const { data, isLoading, error, isFetching, refetch } = useProjectItems(projectId)
 
   const allItems = useMemo(() => {
     if (!data?.items) return []
@@ -38,5 +39,6 @@ export function useItems(
     isRefetching: isFetching && !isLoading,
     error: error as Error | null,
     projectTitle: data?.title ?? '',
+    refetch,
   }
 }

@@ -101,3 +101,5 @@ export function useProjectItems(projectId: string) {
     enabled: !!projectId,
   })
 }
+
+export type UseProjectItemsResult = ReturnType<typeof useProjectItems>

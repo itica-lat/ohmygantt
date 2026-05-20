@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, BarChart2, Code2, Share2, Copy, Check } from 'lucide-react'
+import { ArrowLeft, BarChart2, Code2, Share2, Copy, Check, RefreshCw } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useItems, type ItemFilters } from '@/hooks/useItems'
 import { getUniqueCodes, getUniqueAssignees, getUniqueIterations, getUniqueMilestones } from '@/lib/gantt'
@@ -142,7 +142,7 @@ export default function GanttRoute() {
 
   const [filters, setFilters] = useState<ItemFilters>({ codes: [], statuses: [], assignees: [], iterations: [], milestones: [] })
 
-  const { items, allItems, isLoading, isRefetching, error, projectTitle } = useItems(projectId, filters)
+  const { items, allItems, isLoading, isRefetching, error, projectTitle, refetch } = useItems(projectId, filters)
 
   const availableCodes = useMemo(() => getUniqueCodes(allItems), [allItems])
   const availableAssignees = useMemo(() => getUniqueAssignees(allItems), [allItems])
@@ -192,6 +192,16 @@ export default function GanttRoute() {
           </div>
 
           <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-1.5 text-[#7aa3c8]"
+              onClick={() => refetch()}
+              disabled={isRefetching}
+            >
+              <RefreshCw size={14} className={isRefetching ? 'animate-spin' : ''} />
+              Refresh
+            </Button>
             <Button
               variant="ghost"
               size="sm"
