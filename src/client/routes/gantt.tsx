@@ -1,10 +1,11 @@
 import { useState, useMemo } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, BarChart2, Code2, Share2, Copy, Check, RefreshCw } from 'lucide-react'
+import { ArrowLeft, BarChart2, Code2, Share2, Copy, Check, RefreshCw, FileDown } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useItems, type ItemFilters } from '@/hooks/useItems'
 import { getUniqueCodes, getUniqueAssignees, getUniqueIterations, getUniqueMilestones } from '@/lib/gantt'
 import type { GanttItem } from '@/lib/gantt'
+import { generateStandaloneHtml } from '@/lib/export'
 import Shell from '@/components/layout/Shell'
 import GanttChart from '@/components/gantt/GanttChart'
 import GanttFilters from '@/components/gantt/GanttFilters'
@@ -210,6 +211,24 @@ export default function GanttRoute() {
             >
               <BarChart2 size={14} />
               Metrics
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-1.5 text-[#7aa3c8]"
+              onClick={() => {
+                const html = generateStandaloneHtml(allItems, projectTitle)
+                const blob = new Blob([html], { type: 'text/html;charset=utf-8' })
+                const url = URL.createObjectURL(blob)
+                const a = document.createElement('a')
+                a.href = url
+                a.download = `${projectTitle.replace(/[^a-z0-9]/gi, '_')}_gantt.html`
+                a.click()
+                URL.revokeObjectURL(url)
+              }}
+            >
+              <FileDown size={14} />
+              Export
             </Button>
             <ShareDialog projectTitle={projectTitle} allItems={allItems} />
             <EmbedDialog projectId={projectId} />
