@@ -23,5 +23,9 @@ jobs:
         working-directory: /home/hermes/repos/ohmygantt
         run: bun run build
 
+      - name: Deploy to nginx docroot
+        working-directory: /home/hermes/repos/ohmygantt
+        run: sudo rsync -av --delete dist/ /var/www/gantt.ohmy.lat/
+
       - name: Restart service
-        run: sudo /usr/bin/systemctl restart ohmygantt.service
+        run: sudo /usr/bin/systemctl restart gantt.service
